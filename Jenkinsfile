@@ -2,44 +2,60 @@
 pipeline {
     agent any
 
+    environment {
+        AWS_REGION = 'us-east-1'
+        ECR_REPOSITORY = '741444304666.dkr.ecr.us-east-1.amazonaws.com/portfolio'
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/jeevanandam1412-beep/Static-portfolio-website-deployed.git'
-            }
-        }
-
-        stage('Verify Files') {
-            steps {
-                sh 'ls -la'
-                sh 'test -f index.html'
-                sh 'test -f Dockerfile'
-                sh 'test -f nginx.conf'
-                sh 'test -f style.css'
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t portfolio:latest .'
+                sh 'docker build -t portfolio:${BUILD_NUMBER} .'
             }
         }
 
-        stage('Deploy Container') {
+        stage('Login to ECR') {
             steps {
-                sh 'docker rm -f portfolio || true'
-                sh 'docker run -d --name portfolio --restart unless-stopped -p 8081:80 portfolio:latest'
+                sh '''
+                    aws ecr get-login-password --region $AWS_REGION |
+                    docker login --username AWS --password-stdin 741444304666.dkr.ecr.us-east-1.amazonaws.com
+                '''
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Tag Image') {
             steps {
-                sh 'docker ps'
-                sh 'docker exec portfolio nginx -t'
-                sh 'curl -fsS http://localhost:8081/health'
+                sh '''
+                    docker tag portfolio:${BUILD_NUMBER} \
+                    ${ECR_REPOSITORY}:${BUILD_NUMBER}
+                    docker tag portfolio:${BUILD_NUMBER} \
+                    ${ECR_REPOSITORY}:latest
+                '''
+            }
+        }
+
+        stage('Push to ECR') {
+            steps {
+                sh '''
+                    docker push ${ECR_REPOSITORY}:${BUILD_NUMBER}
+                    docker push ${ECR_REPOSITORY}:latest
+                '''
             }
         }
     }
-}
 
+    post {
+        success {
+            echo 'Docker image pushed to Amazon ECR successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Check the stage console output.'
+        }
+    }
+}

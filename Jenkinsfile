@@ -5,19 +5,17 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main',
+                    url: 'https://github.com/jeevanandam1412-beep/Static-portfolio-website-deployed.git'
             }
         }
 
         stage('Verify Files') {
             steps {
-                sh '''
-                    test -f index.html
-                    test -f style.css
-                    test -f Dockerfile
-                    test -f nginx.conf
-                    echo "Project files verified successfully"
-                '''
+                sh 'ls -la'
+                sh 'test -f index.html'
+                sh 'test -f Dockerfile'
+                sh 'test -f style.css'
             }
         }
 
@@ -26,24 +24,5 @@ pipeline {
                 sh 'docker build -t devops-portfolio:latest .'
             }
         }
-
-        stage('Run Container') {
-            steps {
-                sh '''
-                    docker rm -f devops-portfolio || true
-                    docker run -d --name devops-portfolio -p 8080:80 devops-portfolio:latest
-                '''
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Portfolio deployed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed. Check the console output.'
-        }
     }
 }
-```

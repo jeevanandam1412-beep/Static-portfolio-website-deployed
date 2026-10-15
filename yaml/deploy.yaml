@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portfolio
+  template:
+    metadata:
+      labels:
+        app: portfolio
+    spec:
+      containers:
+        - name: portfolio
+          image: 741444304666.dkr.ecr.us-east-1.amazonaws.com/portfolio:16
+          ports:
+            - containerPort: 80
+          imagePullPolicy: Always

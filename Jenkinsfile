@@ -22,21 +22,21 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'sudo docker build -t portfolio:latest .'
+                sh 'docker build -t portfolio:latest .'
             }
         }
 
         stage('Deploy Container') {
             steps {
-                sh 'sudo docker rm -f portfolio || true'
-                sh 'sudo docker run -d --name portfolio --restart unless-stopped -p 8081:80 portfolio:latest'
+                sh 'docker rm -f portfolio || true'
+                sh 'docker run -d --name portfolio --restart unless-stopped -p 8081:80 portfolio:latest'
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                sh 'sudo docker ps'
-                sh 'sudo docker exec portfolio nginx -t'
+                sh 'docker ps'
+                sh 'docker exec portfolio nginx -t'
                 sh 'curl -fsS http://localhost:8081/health'
             }
         }
